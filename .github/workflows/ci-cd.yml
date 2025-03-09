@@ -1,0 +1,73 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**'  # Runs for all branches
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/master'  # Runs on all branches except master
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build and Run Tests
+        run: ./mvnw --no-transfer-progress clean verify
+
+      - if: ${{ github.ref == 'refs/heads/master' }}
+        name: Publish to GitHub Packages Apache Maven
+        run: ./mvnw deploy -s $GITHUB_WORKSPACE/settings.xml
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  deploy:
+    name: Build, Test & Deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'  # Runs only on master
+    permissions:
+      contents: read
+      packages: write # Needed to publish to GitHub Packages
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+          settings-path: ${{ github.workspace }} # location for the settings.xml file
+          cache: 'maven'
+
+      - name: Build and Deploy to GitHub Packages
+        run: ./mvnw --no-transfer-progress clean deploy -s $GITHUB_WORKSPACE/settings.xml
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
