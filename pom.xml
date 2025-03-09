@@ -5,7 +5,7 @@
 
 	<groupId>com.amalvadkar</groupId>
 	<artifactId>am-commons-utils</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<packaging>jar</packaging>
 	<name>am-commons-utils</name>
 	<description>Common Utility Library</description>
