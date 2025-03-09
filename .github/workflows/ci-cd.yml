@@ -58,6 +58,9 @@ jobs:
           settings-path: ${{ github.workspace }} # location for the settings.xml file
           cache: 'maven'
 
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
       - name: Build and Deploy to GitHub Packages
         run: ./mvnw --no-transfer-progress clean deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
